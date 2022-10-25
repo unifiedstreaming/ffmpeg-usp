@@ -1,0 +1,88 @@
+#
+# "THE BEER-WARE LICENSE" (Revision CS-42):
+#
+# This file was written by the CodeShop developers.  As long as you
+# retain this notice you can do whatever you want with it.
+# If we meet some day, and you think this file is worth it, you can
+# buy us a beer in return.  Even if you do that, this file still
+# comes WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+
+ffmpeg-usp-makefile := $(abspath $(lastword $(MAKEFILE_LIST)))
+ffmpeg-src-dir := $(abspath $(dir $(ffmpeg-usp-makefile)))
+
+include usp-builder/USPCommon.mki
+
+$(if $(work-dir),,$(error work-dir must be set))
+$(call check-out-of-tree,$(work-dir),$(ffmpeg-src-dir))
+
+$(if $(stage-dir),,$(error stage-dir must be set))
+$(call check-out-of-tree,$(stage-dir),$(ffmpeg-src-dir))
+
+$(if $(unix-like),,$(error unix-like build environment required))
+
+obj-dir := $(work-dir)/obj
+output-dir := $(work-dir)/output
+
+src-files := $(call find-files,%,$(ffmpeg-src-dir))
+
+$(if $(verbose),$(eval export V:=1))
+
+.PHONY: all
+all: build
+
+.PHONY: build
+build: $(work-dir)/usp-build-stamp
+
+.PHONY: stage
+stage: $(work-dir)/usp-stage-stamp
+
+.PHONY: dist
+dist: $(work-dir)/usp-build-stamp
+	$(MAKE) -I $(usp-builder-include-dir) \
+	  -f $(usp-builder-lib-dir)/CollectBuildOutput.mak \
+	  src-dir=$(output-dir) dest-dir=$(call required-value,dest-dir)
+	
+$(work-dir)/usp-configure-stamp: | $(work-dir) $(obj-dir)
+	cd $(obj-dir) && $(ffmpeg-src-dir)/configure \
+	  --prefix=/ \
+	  --disable-static \
+	  --enable-shared \
+	  --enable-pic \
+	  --disable-autodetect \
+	  --disable-programs \
+	  --disable-doc \
+	  --disable-htmlpages \
+	  --disable-manpages \
+	  --disable-podpages \
+	  --disable-txtpages \
+	  --disable-hwaccels \
+	  --extra-cflags=-w \
+	  --build-suffix=_usp \
+	  --disable-stripping \
+	  $(if $(filter debug,$(variant)),--disable-optimizations) \
+	  --extra-ldsoflags=-Wl,-rpath=\''\$$\$$\$$\$$ORIGIN/../lib'\',--enable-new-dtags
+	echo timestamp >"$(call to-shell,$@)"
+
+$(work-dir)/usp-build-stamp: $(work-dir)/usp-configure-stamp $(src-files)
+	$(file >$@.dep.next,$(call dependency-listing,$@,$(src-files)))
+	echo updated $@.dep.next
+	$(MAKE) -C $(obj-dir)
+	$(MAKE) -C $(obj-dir) install DESTDIR=$(output-dir)
+	echo timestamp >$@
+	$(usp-mv-f) $@.dep.next $@.dep
+
+$(work-dir)/usp-stage-stamp: $(work-dir)/usp-build-stamp
+	$(MAKE) -I $(usp-builder-include-dir) \
+	  -f $(usp-builder-lib-dir)/CollectBuildOutput.mak \
+	  src-dir=$(output-dir) dest-dir=$(stage-dir) with-devel=yes
+	echo timestamp >$@
+
+$(obj-dir) : | $(work-dir)
+$(output-dir) : | $(work-dir)
+
+$(work-dir) $(obj-dir) $(output-dir):
+	$(usp-mkdir-p) "$@"
+
+-include $(work-dir)/usp-build-stamp.dep
