@@ -12,6 +12,9 @@
 # Compiler: MSVC 14 (aka Visual Studio 2019)
 # Resulting license: LGPL v2.1
 
+# PLEASE NOTE: this script should be run under MSYS.
+# ffmpeg does not support an MSVC build under Cygwin.
+
 # Debug build
 build_dir=bld64-msvc-14-lgpl/debug
 install_dir=../../out64-msvc-14-lgpl/debug

@@ -20,12 +20,19 @@ $(call check-out-of-tree,$(work-dir),$(ffmpeg-src-dir))
 $(if $(stage-dir),,$(error stage-dir must be set))
 $(call check-out-of-tree,$(stage-dir),$(ffmpeg-src-dir))
 
-$(if $(unix-like),,$(error unix-like build environment required))
+# For Windows, build ffmpeg manually using MSYS
+build-ffmpeg := $(if $(windows),,yes)
 
-obj-dir := $(work-dir)/obj
-output-dir := $(work-dir)/output
-
-src-files := $(call find-files,%,$(ffmpeg-src-dir))
+ifdef build-ffmpeg
+  src-files := $(call find-files,%,$(ffmpeg-src-dir))
+  obj-dir := $(work-dir)/obj
+  output-dir := $(work-dir)/output
+  headers-dir := $(output-dir)/include
+  libs-dir := $(output-dir)/lib
+else
+  headers-dir := $(abspath out64-msvc-14-lgpl/include)
+  libs-dir := $(abspath out64-msvc-14-lgpl/$(variant))
+endif
 
 $(if $(verbose),$(eval export V:=1))
 
@@ -40,12 +47,38 @@ stage: $(work-dir)/usp-stage-stamp
 
 .PHONY: dist
 dist: $(work-dir)/usp-build-stamp
-	$(MAKE) -I $(usp-builder-include-dir) \
-	  -f $(usp-builder-lib-dir)/CollectBuildOutput.mak \
-	  src-dir=$(output-dir) dest-dir=$(call required-value,dest-dir)
+	$(MAKE) -I "$(usp-builder-include-dir)" \
+	  -f "$(usp-builder-lib-dir)/CollectBuildOutput.mak" \
+	  libs-dir="$(libs-dir)" \
+	  dest-dir="$(call required-value,dest-dir)"
 	
-$(work-dir)/usp-configure-stamp: | $(work-dir) $(obj-dir)
-	cd $(obj-dir) && $(ffmpeg-src-dir)/configure \
+$(work-dir)/usp-stage-stamp: $(work-dir)/usp-build-stamp
+	$(MAKE) -I "$(usp-builder-include-dir)" \
+	  -f "$(usp-builder-lib-dir)/CollectBuildOutput.mak" \
+	  headers-dir="$(headers-dir)" \
+	  libs-dir="$(libs-dir)" \
+	  dest-dir="$(stage-dir)" \
+	  with-devel=yes
+	echo timestamp >"$(call to-shell,$@)"
+
+$(work-dir):
+	$(usp-mkdir-p) "$(call to-shell,$@)"
+
+ifdef build-ffmpeg
+
+  $(work-dir)/usp-build-stamp: $(work-dir)/usp-configure-stamp $(src-files)
+	$(file >$@.dep.next,$(call dependency-listing,$@,$(src-files)))
+	echo updated $@.dep.next
+	$(MAKE) -C $(obj-dir)
+	$(MAKE) -C $(obj-dir) install DESTDIR=$(output-dir)
+	echo timestamp >"$(call to-shell,$@)"
+	$(usp-mv-f) "$(call to-shell,$@.dep.next)" "$(call to-shell,$@.dep)"
+
+  -include $(work-dir)/usp-build-stamp.dep
+
+  $(work-dir)/usp-configure-stamp: | $(work-dir) $(obj-dir)
+	cd "$(call-to-shell,$(obj-dir))" && \
+	  "$(call to-shell,$(ffmpeg-src-dir)/configure)" \
 	  --prefix=/ \
 	  --disable-static \
 	  --enable-shared \
@@ -65,24 +98,15 @@ $(work-dir)/usp-configure-stamp: | $(work-dir) $(obj-dir)
 	  --extra-ldsoflags=-Wl,-rpath=\''\$$\$$\$$\$$ORIGIN/../lib'\',--enable-new-dtags
 	echo timestamp >"$(call to-shell,$@)"
 
-$(work-dir)/usp-build-stamp: $(work-dir)/usp-configure-stamp $(src-files)
-	$(file >$@.dep.next,$(call dependency-listing,$@,$(src-files)))
-	echo updated $@.dep.next
-	$(MAKE) -C $(obj-dir)
-	$(MAKE) -C $(obj-dir) install DESTDIR=$(output-dir)
-	echo timestamp >$@
-	$(usp-mv-f) $@.dep.next $@.dep
+  $(obj-dir) : | $(work-dir)
+  $(output-dir) : | $(work-dir)
 
-$(work-dir)/usp-stage-stamp: $(work-dir)/usp-build-stamp
-	$(MAKE) -I $(usp-builder-include-dir) \
-	  -f $(usp-builder-lib-dir)/CollectBuildOutput.mak \
-	  src-dir=$(output-dir) dest-dir=$(stage-dir) with-devel=yes
-	echo timestamp >$@
+  $(obj-dir) $(output-dir):
+	$(usp-mkdir-p) "$(call to-shell,$@)"
 
-$(obj-dir) : | $(work-dir)
-$(output-dir) : | $(work-dir)
+else
 
-$(work-dir) $(obj-dir) $(output-dir):
-	$(usp-mkdir-p) "$@"
+  $(work-dir)/usp-build-stamp: $(work-dir)
+	echo timestamp >"$(call to-shell,$@)"
 
--include $(work-dir)/usp-build-stamp.dep
+endif
