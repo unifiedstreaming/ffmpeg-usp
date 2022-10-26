@@ -77,7 +77,7 @@ ifdef build-ffmpeg
   -include $(work-dir)/usp-build-stamp.dep
 
   $(work-dir)/usp-configure-stamp: | $(work-dir) $(obj-dir)
-	cd "$(call-to-shell,$(obj-dir))" && \
+	cd "$(call to-shell,$(obj-dir))" && \
 	  "$(call to-shell,$(ffmpeg-src-dir)/configure)" \
 	  --prefix=/ \
 	  --disable-static \
