@@ -9,8 +9,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
 
-ffmpeg-usp-makefile := $(abspath $(lastword $(MAKEFILE_LIST)))
-ffmpeg-src-dir := $(abspath $(dir $(ffmpeg-usp-makefile)))
+ffmpeg-src-dir := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 include usp-builder/USPCommon.mki
 
@@ -20,13 +19,14 @@ $(call check-out-of-tree,$(work-dir),$(ffmpeg-src-dir))
 $(if $(stage-dir),,$(error stage-dir must be set))
 $(call check-out-of-tree,$(stage-dir),$(ffmpeg-src-dir))
 
+src-files := $(call find-files,%,$(ffmpeg-src-dir))
+obj-dir := $(work-dir)/obj
+output-dir := $(work-dir)/output
+
 # For Windows, build ffmpeg manually using MSYS
 build-ffmpeg := $(if $(windows),,yes)
 
 ifdef build-ffmpeg
-  src-files := $(call find-files,%,$(ffmpeg-src-dir))
-  obj-dir := $(work-dir)/obj
-  output-dir := $(work-dir)/output
   headers-dir := $(output-dir)/include
   libs-dir := $(output-dir)/lib
 else
@@ -34,7 +34,9 @@ else
   libs-dir := $(abspath out64-msvc-14-lgpl/$(variant))
 endif
 
-$(if $(verbose),$(eval export V:=1))
+ifdef verbose
+  export V := 1
+endif
 
 .PHONY: all
 all: build
@@ -61,22 +63,23 @@ $(work-dir)/usp-stage-stamp: $(work-dir)/usp-build-stamp
 	  with-devel=yes
 	echo timestamp >"$(call to-shell,$@)"
 
-$(work-dir):
-	$(usp-mkdir-p) "$(call to-shell,$@)"
-
-ifdef build-ffmpeg
-
-  $(work-dir)/usp-build-stamp: $(work-dir)/usp-configure-stamp $(src-files)
+$(work-dir)/usp-build-stamp: \
+	  $(work-dir)/usp-configure-stamp \
+          $(src-files) \
+	  | $(output-dir)
 	$(file >$@.dep.next,$(call dependency-listing,$@,$(src-files)))
-	echo updated $@.dep.next
+	@echo updated $@.dep.next
+ifdef build-ffmpeg
 	$(MAKE) -C $(obj-dir)
 	$(MAKE) -C $(obj-dir) install DESTDIR=$(output-dir)
+endif
 	echo timestamp >"$(call to-shell,$@)"
 	$(usp-mv-f) "$(call to-shell,$@.dep.next)" "$(call to-shell,$@.dep)"
 
-  -include $(work-dir)/usp-build-stamp.dep
+-include $(work-dir)/usp-build-stamp.dep
 
-  $(work-dir)/usp-configure-stamp: | $(work-dir) $(obj-dir)
+$(work-dir)/usp-configure-stamp: | $(work-dir) $(obj-dir)
+ifdef build-ffmpeg
 	cd "$(call to-shell,$(obj-dir))" && \
 	  "$(call to-shell,$(ffmpeg-src-dir)/configure)" \
 	  --prefix=/ \
@@ -96,17 +99,10 @@ ifdef build-ffmpeg
 	  --disable-stripping \
 	  $(if $(filter debug,$(variant)),--disable-optimizations) \
 	  --extra-ldsoflags=-Wl,-rpath=\''\$$\$$\$$\$$ORIGIN/../lib'\',--enable-new-dtags
-	echo timestamp >"$(call to-shell,$@)"
-
-  $(obj-dir) : | $(work-dir)
-  $(output-dir) : | $(work-dir)
-
-  $(obj-dir) $(output-dir):
-	$(usp-mkdir-p) "$(call to-shell,$@)"
-
-else
-
-  $(work-dir)/usp-build-stamp: $(work-dir)
-	echo timestamp >"$(call to-shell,$@)"
-
 endif
+	echo timestamp >"$(call to-shell,$@)"
+
+$(obj-dir) $(output-dir) : | $(work-dir)
+
+$(work-dir) $(obj-dir) $(output-dir):
+	$(usp-mkdir-p) "$(call to-shell,$@)"
