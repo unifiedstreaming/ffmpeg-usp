@@ -53,7 +53,7 @@ dist: $(work-dir)/usp-build-stamp
 	  -f "$(usp-builder-lib-dir)/CollectBuildOutput.mak" \
 	  libs-dir="$(libs-dir)" \
 	  dest-dir="$(call required-value,dest-dir)"
-	
+
 $(work-dir)/usp-stage-stamp: $(work-dir)/usp-build-stamp
 	$(MAKE) -I "$(usp-builder-include-dir)" \
 	  -f "$(usp-builder-lib-dir)/CollectBuildOutput.mak" \
