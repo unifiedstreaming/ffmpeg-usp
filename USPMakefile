@@ -82,6 +82,8 @@ $(work-dir)/usp-configure-stamp: | $(work-dir) $(obj-dir)
 ifdef build-ffmpeg
 	cd "$(call to-shell,$(obj-dir))" && \
 	  "$(call to-shell,$(ffmpeg-src-dir)/configure)" \
+	  --cc="$(toolset-c-compiler)" \
+	  --cxx="$(toolset-cpp-compiler)" \
 	  --prefix=/ \
 	  --disable-static \
 	  --enable-shared \
