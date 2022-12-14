@@ -38,6 +38,16 @@ ifdef verbose
   export V := 1
 endif
 
+config-mak-edits := $(strip \
+  $(if $(windows), \
+    '' \
+  , \
+    's|^SLIBNAME_WITH_MAJOR=.*|SLIBNAME_WITH_MAJOR=$$(SLIBPREF)$$(FULLNAME)_$$(LIBMAJOR)$$(SLIBSUF)|' \
+    's|^SLIB_INSTALL_NAME=.*|SLIB_INSTALL_NAME=$$(SLIBNAME_WITH_MAJOR)|' \
+    's|^SLIB_INSTALL_LINKS=.*|SLIB_INSTALL_LINKS=$$(SLIBNAME)|' \
+  ) \
+)
+	
 .PHONY: all
 all: build
 
@@ -101,6 +111,15 @@ ifdef build-ffmpeg
 	  --disable-stripping \
 	  $(if $(filter debug,$(variant)),--disable-optimizations) \
 	  --extra-ldsoflags=-Wl,-rpath=\''\$$\$$\$$\$$ORIGIN/../lib'\',--enable-new-dtags
+	$(usp-cp) \
+	  "$(call to-shell,$(obj-dir)/ffbuild/config.mak)" \
+	  "$(call to-shell,$(obj-dir)/ffbuild/config.mak.orig)"
+	$(usp-sed) $(foreach e,$(config-mak-edits),-e $(e)) \
+	  "$(call to-shell,$(obj-dir)/ffbuild/config.mak.orig)" \
+	  >"$(call to-shell,$(obj-dir)/ffbuild/config.mak)"
+	diff -u \
+	  "$(call to-shell,$(obj-dir)/ffbuild/config.mak.orig)" \
+	  "$(call to-shell,$(obj-dir)/ffbuild/config.mak)" || true
 endif
 	echo timestamp >"$(call to-shell,$@)"
 
