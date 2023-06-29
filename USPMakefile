@@ -57,8 +57,8 @@ build: $(work-dir)/usp-build-stamp
 .PHONY: stage
 stage: $(work-dir)/usp-stage-stamp
 
-.PHONY: dist
-dist: $(work-dir)/usp-build-stamp
+.PHONY: deploy
+deploy: $(work-dir)/usp-build-stamp
 	$(MAKE) -I "$(usp-builder-include-dir)" \
 	  -f "$(usp-builder-lib-dir)/CollectBuildOutput.mak" \
 	  libs-dir="$(libs-dir)" \
