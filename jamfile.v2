@@ -1,0 +1,74 @@
+#
+# "THE BEER-WARE LICENSE" (Revision CS-42):
+#
+# This file was written by the CodeShop developers.  As long as you
+# retain this notice you can do whatever you want with it.
+# If we meet some day, and you think this file is worth it, you can
+# buy us a beer in return.  Even if you do that, this file still
+# comes WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+
+import os ;
+
+project ffmpeg
+  : usage-requirements
+    <include>out64-msvc-14-lgpl/include
+  ;
+
+if [ os.name ] = NT
+{
+  searched-lib avcodec_usp :
+    : <address-model>64,<variant>debug:<search>out64-msvc-14-lgpl/debug
+      <address-model>64,<variant>release:<search>out64-msvc-14-lgpl/release
+      <name>avcodec_usp
+    ;
+
+  searched-lib avdevice_usp :
+    : <address-model>64,<variant>debug:<search>out64-msvc-14-lgpl/debug
+      <address-model>64,<variant>release:<search>out64-msvc-14-lgpl/release
+      <name>avdevice_usp
+    ;
+
+  searched-lib avfilter_usp :
+    : <address-model>64,<variant>debug:<search>out64-msvc-14-lgpl/debug
+      <address-model>64,<variant>release:<search>out64-msvc-14-lgpl/release
+      <name>avfilter_usp
+    ;
+
+  searched-lib avformat_usp :
+    : <address-model>64,<variant>debug:<search>out64-msvc-14-lgpl/debug
+      <address-model>64,<variant>release:<search>out64-msvc-14-lgpl/release
+      <name>avformat_usp
+    ;
+
+  searched-lib avutil_usp :
+    : <address-model>64,<variant>debug:<search>out64-msvc-14-lgpl/debug
+      <address-model>64,<variant>release:<search>out64-msvc-14-lgpl/release
+      <name>avutil_usp
+    ;
+
+  searched-lib swresample_usp :
+    : <address-model>64,<variant>debug:<search>out64-msvc-14-lgpl/debug
+      <address-model>64,<variant>release:<search>out64-msvc-14-lgpl/release
+      <name>swresample_usp
+    ;
+
+  searched-lib swscale_usp :
+    : <address-model>64,<variant>debug:<search>out64-msvc-14-lgpl/debug
+      <address-model>64,<variant>release:<search>out64-msvc-14-lgpl/release
+      <name>swscale_usp
+    ;
+}
+else
+{
+  lib avcodec_usp : : <link>shared ;
+  lib avdevice_usp : : <link>shared ;
+  lib avfilter_usp : : <link>shared ;
+  lib avformat_usp : : <link>shared ;
+  lib avutil_usp : : <link>shared ;
+  lib swresample_usp : : <link>shared ;
+  lib swscale_usp : : <link>shared ;
+}
+
+## End Of File
