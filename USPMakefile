@@ -110,7 +110,7 @@ ifdef build-ffmpeg
 	  --build-suffix=_usp \
 	  --disable-stripping \
 	  $(if $(filter debug,$(variant)),--disable-optimizations) \
-	  --extra-ldsoflags=-Wl,-rpath=\''\$$\$$\$$\$$ORIGIN/../lib'\',--enable-new-dtags
+	  $(if $(darwin),,--extra-ldsoflags=-Wl,-rpath=\''\$$\$$\$$\$$ORIGIN/../lib'\',--enable-new-dtags)
 	$(usp-cp) \
 	  "$(call to-shell,$(obj-dir)/ffbuild/config.mak)" \
 	  "$(call to-shell,$(obj-dir)/ffbuild/config.mak.orig)"
