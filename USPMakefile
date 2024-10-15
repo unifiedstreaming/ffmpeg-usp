@@ -13,6 +13,8 @@ ffmpeg-src-dir := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 include usp-builder/USPCommon.mki
 
+this-uspmakefile := $(ffmpeg-src-dir)/USPMakefile
+
 $(if $(work-dir),,$(error work-dir must be set))
 $(call check-out-of-tree,$(work-dir),$(ffmpeg-src-dir))
 
@@ -33,6 +35,18 @@ else
   headers-dir := $(abspath out64-msvc-14-lgpl/include)
   libs-dir := $(abspath out64-msvc-14-lgpl/$(variant))
 endif
+
+#
+# Disabling optimizations was seen to break a 32-bit build of ffmpeg-7.1
+# on 32-bit debian 12
+#
+disable-optimizations := $(strip \
+  $(if $(filter debug,$(variant)), \
+    $(if $(filter-out 32,$(address-model)), \
+      yes \
+    ) \
+  ) \
+)
 
 ifdef verbose
   export V := 1
@@ -88,7 +102,7 @@ endif
 
 -include $(work-dir)/usp-build-stamp.dep
 
-$(work-dir)/usp-configure-stamp: | $(work-dir) $(obj-dir)
+$(work-dir)/usp-configure-stamp: $(this-uspmakefile) | $(work-dir) $(obj-dir)
 ifdef build-ffmpeg
 	cd "$(call to-shell,$(obj-dir))" && \
 	  "$(call to-shell,$(ffmpeg-src-dir)/configure)" \
@@ -110,7 +124,7 @@ ifdef build-ffmpeg
 	  --build-suffix=_usp \
 	  --disable-stripping \
 	  $(if $(darwin),--install-name-dir=@rpath) \
-	  $(if $(filter debug,$(variant)),--disable-optimizations) \
+	  $(if $(disable-optimizations),--disable-optimizations) \
 	  --extra-ldsoflags=$(if $(darwin),-Wl$(comma)-rpath$(comma)@loader_path/../lib,-Wl$(comma)-rpath=\''\$$\$$\$$\$$ORIGIN/../lib'\'$(comma)--enable-new-dtags)
 	$(usp-cp) \
 	  "$(call to-shell,$(obj-dir)/ffbuild/config.mak)" \
