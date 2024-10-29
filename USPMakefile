@@ -102,8 +102,11 @@ endif
 
 -include $(work-dir)/usp-build-stamp.dep
 
-$(work-dir)/usp-configure-stamp: $(this-uspmakefile) | $(work-dir) $(obj-dir)
+$(work-dir)/usp-configure-stamp: \
+  $(this-uspmakefile) $(ffmpeg-src-dir)/configure | $(work-dir)
 ifdef build-ffmpeg
+	$(usp-rm-dir) "$(call to-shell,$(obj-dir))"
+	$(usp-mkdir-p) "$(call to-shell,$(obj-dir))"
 	cd "$(call to-shell,$(obj-dir))" && \
 	  "$(call to-shell,$(ffmpeg-src-dir)/configure)" \
 	  --cc="$(toolset-c-compiler)" \
@@ -138,7 +141,7 @@ ifdef build-ffmpeg
 endif
 	echo timestamp >"$(call to-shell,$@)"
 
-$(obj-dir) $(output-dir) : | $(work-dir)
+$(output-dir) : | $(work-dir)
 
-$(work-dir) $(obj-dir) $(output-dir):
+$(work-dir) $(output-dir):
 	$(usp-mkdir-p) "$(call to-shell,$@)"
