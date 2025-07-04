@@ -61,7 +61,7 @@ config-mak-edits := $(strip \
     's|^SLIB_INSTALL_LINKS=.*|SLIB_INSTALL_LINKS=$$(SLIBNAME)|' \
   ) \
 )
-	
+
 .PHONY: all
 all: build
 
