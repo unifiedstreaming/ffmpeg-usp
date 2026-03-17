@@ -41,6 +41,7 @@ cd ${build_dir}
   --extra-ldflags="-debug:full" \
   --build-suffix=_usp           \
   --disable-debug               \
+  --disable-optimizations       \
   --disable-stripping
 
 make -j${nproc} V=1
@@ -62,14 +63,14 @@ cd ${build_dir}
   --prefix=${install_dir}       \
   --disable-static              \
   --enable-shared               \
-  --disable-autodetect    \
+  --disable-autodetect          \
   --disable-programs            \
   --disable-doc                 \
   --disable-htmlpages           \
   --disable-manpages            \
   --disable-podpages            \
   --disable-txtpages            \
-  --disable-hwaccels      \
+  --disable-hwaccels            \
   --toolchain=msvc              \
   --extra-cflags="-MD -Z7"      \
   --extra-ldflags="-debug:full" \
