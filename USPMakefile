@@ -62,23 +62,28 @@ config-mak-edits := $(strip \
   ) \
 )
 
+override usp-configure-stamp = $(work-dir)/usp-configure-stamp
+override usp-build-stamp := $(work-dir)/usp-build-stamp
+override usp-install-stamp := $(work-dir)/usp-install-stamp
+override usp-stage-stamp := $(work-dir)/usp-stage-stamp
+
 .PHONY: all
 all: build
 
 .PHONY: build
-build: $(work-dir)/usp-build-stamp
+build: $(usp-build-stamp)
 
 .PHONY: stage
-stage: $(work-dir)/usp-stage-stamp
+stage: $(usp-stage-stamp)
 
 .PHONY: deploy
-deploy: $(work-dir)/usp-build-stamp
+deploy: $(usp-build-stamp)
 	$(MAKE) -I "$(usp-builder-include-dir)" \
 	  -f "$(usp-builder-lib-dir)/CollectBuildOutput.mak" \
 	  libs-dir="$(libs-dir)" \
 	  dest-dir="$(call required-value,dest-dir)"
 
-$(work-dir)/usp-stage-stamp: $(work-dir)/usp-build-stamp
+$(usp-stage-stamp): $(usp-build-stamp)
 	$(MAKE) -I "$(usp-builder-include-dir)" \
 	  -f "$(usp-builder-lib-dir)/CollectBuildOutput.mak" \
 	  headers-dir="$(headers-dir)" \
@@ -87,8 +92,8 @@ $(work-dir)/usp-stage-stamp: $(work-dir)/usp-build-stamp
 	  with-devel=yes
 	echo timestamp >"$(call to-shell,$@)"
 
-$(work-dir)/usp-build-stamp: \
-	  $(work-dir)/usp-configure-stamp \
+$(usp-build-stamp): \
+	  $(usp-configure-stamp) \
 	  $(src-files) \
 	  | $(output-dir)
 	$(file >$@.dep.next,$(call dependency-listing,$@,$(src-files)))
@@ -100,9 +105,9 @@ endif
 	echo timestamp >"$(call to-shell,$@)"
 	$(usp-mv-f) "$(call to-shell,$@.dep.next)" "$(call to-shell,$@.dep)"
 
--include $(work-dir)/usp-build-stamp.dep
+-include $(usp-build-stamp).dep
 
-$(work-dir)/usp-configure-stamp: \
+$(usp-configure-stamp): \
   $(this-uspmakefile) $(ffmpeg-src-dir)/configure | $(work-dir)
 ifdef build-ffmpeg
 	$(usp-rm-dir) "$(call to-shell,$(obj-dir))"
