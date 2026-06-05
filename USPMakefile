@@ -128,13 +128,12 @@ ifdef build-ffmpeg
 	  --disable-podpages \
 	  --disable-txtpages \
 	  --disable-hwaccels \
-	  --extra-cflags="-w $(sanitizer-flags)" \
+	  --extra-cflags=-w \
 	  --build-suffix=_usp \
 	  --disable-stripping \
 	  $(if $(darwin),--install-name-dir=@rpath) \
 	  $(if $(disable-optimizations),--disable-optimizations) \
-	  --extra-ldexeflags="$(sanitizer-flags)"
-	  --extra-ldsoflags="$(if $(darwin),-Wl$(comma)-rpath$(comma)@loader_path/../lib,-Wl$(comma)-rpath=\''\$$\$$\$$\$$ORIGIN/../lib'\'$(comma)--enable-new-dtags) $(sanitizer-flags)"
+	  --extra-ldsoflags=$(if $(darwin),-Wl$(comma)-rpath$(comma)@loader_path/../lib,-Wl$(comma)-rpath=\''\$$\$$\$$\$$ORIGIN/../lib'\'$(comma)--enable-new-dtags)
 	$(usp-cp) \
 	  "$(call to-shell,$(obj-dir)/ffbuild/config.mak)" \
 	  "$(call to-shell,$(obj-dir)/ffbuild/config.mak.orig)"
